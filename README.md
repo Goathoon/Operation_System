@@ -1,7 +1,39 @@
-## Project-01 [MFQ Scheduling Simulation]
+# 세가지의 프로젝트 진행
+
+# Project-01 [MFQ Scheduling Simulation]
 
 ### 1. 목표 설정
 3개의 RQ를 갖는 MFQ의 스케줄링 기법을 구현하는 것이 프로젝트의 목표이다. Q0 와 Q1의 RQ는 RR 스케줄링 기법이고, Q2는 SRTN 스케줄링 기법을 사용하여야 한다. 
+- 세부 목표 
+1. Q0 : Time quantum이 2인 RR 스케줄링 기법 사용
+2. Q1 : Time quantum이 4인 RR 스케줄링 기법 사용
+3. 2 : SRTN 스케줄링 기법 사용
+
+- 세부 내용
+1. 각 프로세스는 최초에 각자에게 지정된 queue로 진입하며, 최초 진입 queue는 입력에 의해 결정됨
+2. Qi에서 스케줄받아 실행하고 해당 queue의 time quantum을 소모할 경우 Qi+1로 진입(i= 0, 1)
+3. Qi에서 스케줄받아 실행한 프로세스가 IO burst를 마치고 wakeup 되는 경우 Qi-1로 진입(i= 1, 2)
+4. Q2의 SRTN 스케줄링은 Q2에 있는 프로세스들만을 대상으로 함
+5. 우선순위는 Q0 > Q1 > Q2 순이며, 스케줄링은 항상 높은 우선 순위의 queue에서부터 이루어짐
+
+- 구현
+
+**입력(입력파일명input.txt로작성)**
+
+프로세스 개수 및 각 프로세스별 도착시간(AT), 최초진입queue, # Cycles, 수행트레이스(CPU-BT, IO-BT, …) 등(CPU-BT 및IO-BT는각각CPU burst time, IO burst time을의미함)  (#Cycles는수행트레이스의(CPU-BT, IO-BT) 쌍의개수임; 다만, 마지막Cycle에는CPU-BT만존재함) 
+
+**출력**
+
+1. 스케줄링결과(Gantt chart)
+2. 각프로세스별Turnaround Time(TT) 및Waiting Time(WT)
+3. 전체 프로세스의 평균 TT 및 평균 WT
+
+![image](https://user-images.githubusercontent.com/95288696/210159132-c16428f1-7079-4a1f-9f3d-89e69fe2b5c0.png)
+
+- 고려 사항
+
+1. 모든 프로세스들의 IO burst는 병렬 진행 가능한 것으로 가정
+2. 출력 형태는 각자 자유롭게 결정; 단 출력 결과를 누구나 쉽게 파악할 수 있도록 해야함
 
 ### 2. 사용할 자료 구조 및 정의한 구조체
 
@@ -151,5 +183,204 @@ TIME 0 의 줄에 ‘process_1 in’ 이 있는데 이 때는 TIME 0에 1번 PID
  
 또한 이러한 상태는 CPU가 할당할 프로세스가 없다는 의미로 112초부터 113초까지 아무런 프로세스가 할당되지 않은 idle 한 상태임을 의미한다.
 
+### 6. 아쉬운 점
+
+예외처리를 아예 신경쓰지 않았다. 그저 Valid 한 INPUT만 온다고 가정했었는데, 이 부분에서 점수가 많이 낮아진 프로젝트였다. 이후 프로젝트에서는 예외처리를 반드시 진행했다.
+
 <hr/>
+
+# Project-02 [Deadlock Avoidance]
+
+### 1. 목표 설정
+N개의 process와 M개의 resource type을 갖는 시스템에서 주어진 Max-claim matrix와 Current-allocmatrix 를 기준으로 deadlock avoidance 를수행하기 위한 기본 기법 구현
+(N과 M값, 각 resource unit 개수등을 비롯하여 Max-claim matrix 와 Current-allocmatrix 등은 입력으로 주어짐)
+- 세부 내용
+1. Multiple resource types & multiple resource units가정
+2. 주어진 Current-alloc 상태가 safe 인지 unsafe 인지 확인/판정 (safe인 경우 safe sequence 출력, Unsafe인 경우 이유를 출력
+
+- 구현
+
+**입력(입력파일명input.txt로작성)**
+
+1. 프로세스개수(N) 및resource type 개수(M),각resource type 별resource unit 개수(t1, t2, …, tM)
+2. Max-claim matrix (N×M matrix)
+3. Current-allocmatrix (N×M matrix)
+
+**출력**
+1. Safe 상태 여부
+2. Safe sequence 또는 unsafe state인 이유
+
+![image](https://user-images.githubusercontent.com/95288696/210159196-0fdde6d2-9746-437a-a1dd-b6f139607fbe.png)
+
+### 2. 설계 / 구현 내용
+
+-1 <input.txt 처리 및 예외처리>
+
+인풋으로 주어지는 ”input.txt” 파일을 ‘fscanf’ 로 받아온다. 프로세스의 수, 자원의 수를 받아올 때, 0보다 작은 수이면 의미가 없으므로 “Invalid Input”을 출력한다. 그후에 주어지는 input에 해당하는 것들 (resource unit의 수, 프로세스별 max_claim, current_allocation의 경우)에서는 해당 내용들이 음수이거나, input.txt에 내용이 없는 경우 “Invalid Input”을 출력하는 식으로 예외를 처리했다. 
+
+-2 <input을 저장하는 방법>
+
+input.txt로 받아온 자원의 개수만큼, 각 자원의 수를 담을 배열인 ’resource_array'를 동적 할당하여 저장한다.
+그리고, 프로세스별로 정의된 ‘max_claim’ , ‘current_alloc’을 우선적으로 저장해야 하므로, process 구조체를 선언하여 이를 구조체 멤버로 정의하였다. 또한, deadlock avoidance를 위해 이들이 현재 상태에서 필요로 하는 자원 별 개수에 해당하는 정보가 필요하므로, need_alloc이라는 배열을 하나 더 멤버로 추가하였다. 이는 max_claim 에서 current_alloc 배열의 각 원소를 빼서 need_alloc의 원소로 저장하면 된다. 또한 해당 프로세스의 종료 여부를 체크하는 done이라는 변수를 만들어서 deadlock avoidance를 체크할 시에, 무의미한 반복을 하지 않게 하였다. 그리고 이들을 process의 개수만큼 process 배열을 할당한 구조체 배열인 processes를 정의하였다.
+
+-3 <deadlock avoidance를 체크하는 방법 (setting) >
+
+먼저 ‘isDeadlock’이라는 배열을 선언하였다. 이 배열은 프로세스별로, deadlock인지 아닌지를 판단하는 배열이고, 이 배열의 원소의 index는 프로세스의 넘버와 순서가 같다. (P1이면 0번째, P2이면 1번째 인덱스). 1이면 deadlock이고 0이면 deadlock이 아니다. 이를 시작부분에서 0으로 다 초기화를 해주었다.
+‘done_process’라는 변수는 종료된 프로세스가 몇 개인지 세는 변수이다. 
+‘stack_process’라는 배열은 추후에 safe sequence를 print하기 위한 배열로, 먼저 종료된 프로세스들을 stack처럼 배열에 담기 위해 정의하였다. 이름에만 stack이 들어가 있지, stack으로 구현하지는 않았고, stack의 느낌만 가져갔다. 어차피 safe sequence를 위해 존재하는 배열이므로 원소의 개수는 process의 총 개수로 할당시켰다. 프로세스가 종료될 때마다, 인덱스를 하나씩 늘려가면서 다음 번 종료된 프로세스가 해당 인덱스에 저장되게 하는 방식을 사용하여, 종료된 프로세스 순서대로 해당 배열에 저장된다.
+‘end_process_index’는 stack_process 배열의 인덱스이다.
+
+-4 <deadlock avoidance를 체크하는 방법 (실행) >
+
+1. 이용가능한 자원의 unit의 개수를 resource_array에 저장
+
+총 프로세스에서 이미 할당된 자원의 개수를 type별로 for문을 돌면서 더하여, 해당 resource_array에서 이들을 빼주어 이용 가능한 unit의 개수를 저장하였다.
+
+2. available 한 자원(resource_array에 저장된 정보)를 통해 프로세스 배열을 순회하며 해당 프로세스에게 자원을 할당할 수 있는지 확인
+
+프로세스가 자원을 할당 받는 순서에 대해서는 언급이 없으므로, 프로세스를 처음부터 순서대로 돌면서, 먼저 종료 가능한 프로세스에게 바로 해당 자원을 주고, 종료 후 자원을 반납하는 방식으로 구현하였다.
+이를 while문을 통해서 반복하였는데, 프로세스 배열의 인덱스를 ‘index’로 선언하였고, 이를 증가시키면서 프로세스 배열을 순회하였다.물론 이 때, 프로세스가 종료되었는지 확인하는 과정을 거쳐서, 의미없는 반복을 피하였다. 또한 만일 해당하는 프로세스가 이용가능한 자원 내에서 충분하게 자원을 받지 못하는 경우(종료할 수 없는 경우) 해당하는 프로세스를 ‘isDeadlock’배열에서 1로 설정하여 Deadlock 유발 프로세스임을 정의하였다.
+만일, 프로세스 배열을 순회하는 와중에, 해당 프로세스가 deadlock도 아니고, 종료된 프로세스도 아니라면 이는 avilable한 자원에서 해당 프로세스의 need를 충족시킬 수 있는 상태이므로, 이용 가능한 자원을 프로세스에게 모두 건네 주고, 해당 프로세스가 종료함을 가정하였다. 그러면 프로세스가 가지고 있는 모든 자원을 반환할 것이고, 이를 resource_array에 update 시켰다. 그리고 해당 프로세스가 종료됨을 밝혔고 (done 변수) done_procee(종료된 프로세스의 개수)를 증가시키고, 종료된 프로세스의 순서대로 stack_process에 업데이트 시켜야하므로, end_proces_index에 해당하는 인덱스에 stack_process에 해당 프로세스의 번호를 저장시켰다. (이 때, 인덱스는 프로세스의 번호-1 이므로 이를 반영)그리고 다음에 종료할 프로세스를 위해 인덱스를 하나 증가시킨다. 이 다음에는 처음 프로세스부터 다시 순회해야 하므로, 프로세스 배열의 인덱스인 ‘index’ 또한 0으로 초기화 한다. 
+그 후에, 모든 프로세스가 종료되었는지 확인하고, 만일 종료되었다면(인덱스 == 모든 프로세스의 개수) safe한 상태이므로 이를 stack_process 배열을 처음부터 순회하며 적절한 형태로 print 하였다. 
+만일 while문에서 프로세스를 순회하는데 모든 프로세스를 다 순회 했음에도, index가 0으로 초기화되지 않았다는 것은, deadlock 상태임을 의미한다. 따라서 isDeadlock 배열에서 deadlock 상태인 ‘1’인 인덱스에 해당하는 프로세스들의 정보(index+1)를 꺼내어 프린트한다. 
+
+### 3. 다양한 입력에 대한 실행 결과
+
+![image](https://user-images.githubusercontent.com/95288696/210158969-b0c485f9-3575-4fc3-9dad-b64f95cda199.png)
+
+# Project-03 [Virtual Memory Management 기법 구현]
+
+### 1. 목표 설정
+Demand paging system을 위한 page replacement 기법 구현 및 검증
+
+- 세부 목표 
+주어진 page reference string을 입력받아 아래의 각 replacement 기법으로 처리했을 경우의 memory residence set 변화 과정 및 page fault 발생 과정 추적/출력
+1. MIN
+2. LRU
+3. LFU
+4. WS Memory Management
+
+- 세부 내용
+1. Pageframe 할당량 및 window size 등은 입력으로 결정
+2. 초기 할당된 page frame들은 모두 비어있는 것으로 가정
+3. 각 기법의 실행 결과에 대한 출력방법은 각자 design 하여 진행
+
+- 구현
+
+**입력(입력파일명input.txt로작성)**
+
+![image](https://user-images.githubusercontent.com/95288696/210159289-0f9a075f-d165-42c0-bb24-447afc86a309.png)
+
+**출력**
+
+![image](https://user-images.githubusercontent.com/95288696/210159291-22ca231f-012f-4ce3-a383-c9d9660b0f36.png)
+
+1. 스케줄링결과(Gantt chart)
+2. 각프로세스별Turnaround Time(TT) 및Waiting Time(WT)
+3. 전체 프로세스의 평균 TT 및 평균 WT
+
+### 2. 설계 / 구현 내용
+
+#### 1. <input.txt 처리 및 예외처리>
+
+인풋으로 주어지는 ”input.txt” 파일을 ‘fscanf’ 로 받아온다. 필요한 입력 값들인 process 가 갖는 page의 개수, 할당 page frame의 개수, window size, page reference string의 길이 값들이 0보다 작은 수이거나 해당 입력값이 없거나, 혹은 최대 지정 개수를 초과하면 에러 메세지를 출력하고 종료한다. 또한 reference string의 입력값들은 주어진 reference string의 길이보다 작거나 큰 경우에도 에러 메시지를 출력하고 프로세스를 종료하는 예외처리를 하였다.
+
+#### 2. <FA(Fixed Allocation) 처리 방법>
+
+해당 방법은 각 프로세스마다 할당하는 프레임의 수를 고정시켜서, 프레임에 ref 된 page string을 저장시키는 방식이다.
+따라서, input으로 받은 page frame의 수를 받아와 그 만큼 memory 배열에 동적할당 해 주었다. 또한 frame에 저장된 페이지의 정보들을 저장하는 ref_info 라는 배열도 page의 수만큼 동적할당 해 주었다. 물론 굳이 메모리에 올라와 있는 페이지, 즉 page frame의 수만큼만 동적할당해서 해당 페이지의 정보를 저장할 수도 있겠지만, 구현이 꽤 까다로워 page의 수만큼 동적 할당하였다. 여기서, 페이지의 정보란, FA의 방법 중 MIN의 알고리즘에서는 각 page별 forward distance의 정보를, LRU 알고리즘에서는 backward distance의 정보를, LFU방식에서는 여태까지 참조된 횟수의 정보를 담는다. Variable Allocation 방법인 Working Set 에서는 해당 배열을 사용할 필요가 없다. 여기서 LFU방식에서는 tie의 상황이 존재할 수 있는데, 그러한 상황에서 교체될 page를 정하기 위한 방법에 활용되는 배열인 tie 배열을 총 page의 수만큼 동적 할당했다. 해당 활용 방안은 후에 LFU방식에서 자세히 밝히겠다.
+
+1. MIN(FA)
+
+기본적으로 FA방식중 MIN 과 LRU 방식의 초반부는 동일하다. 따라서초반부의 과정을 do_same함수를 정의하여 실행했다. 여기서 언급하는 초반부는, 모든 page frame이 page에 의해서 꽉 차있는 상태까지를 말한다. 
+해당 함수는 각 기법별로 공통으로 사용되는 page fault수(fault_count), memory 배열의 index(empty_index, 비어있는 pageframe의 index이다.)를 0으로 초기화하고, 모든 page frame에 담긴 정보들을 초기화하며. 각 page의 정보를 담은 ref_info(page_info)를 초기화 시키는 과정에서 시작된다. 이유는, 다른 알고리즘과 기법에서 같은 배열과 정보들이 참조되어 잘못된 정보 공유를 막기 위함이다.  
+page frame을 꽉 채울 때까지 해당 frame에 page를 load하기 위해서 ref 된 page string (배열로 이미 치환했음)의 ref_index를 0부터 시작하여 해당 index를 증가시킴과 동시에 empty_index가 pageframe의 수보다 커지면 해당 함수를 종료한다. 만일 그렇지 않다면 page frame에 이미 참조된 page가 존재하는지 여부를 검사하고 (check 함수로 체크하였다. 해당 함수는 참조된 string과 memory 정보들을 index별로 선형적으로 체크하였다.) 만일 참조된 page가 page frame에 존재하지 않다면, 바로 memory 배열에 해당 page string을 추가하고 page fault의 수를 1만큼 증가시킨다. 이렇게 ref된 page가 생기고 이를 처리할 때마다, 해당 상황을 print 하여 변화 과정을 추적하였다.
+해당 함수가 종료하면 index를 반환하는데, 해당 index는 마지막으로처리한 refstring의 index로, 그 다음 refstring의 index 부터 page를 load하는 과정을 시작하게 한다.
+다시 MIN함수로 돌아와서, 반환된 index부터 마지막 refstring의 index까지 증가시키면서 replacement될 page를 고르고 교체하는 과정을 MIN방식으로 진행한다. MIN은 forward distance방식을 사용하므로, page fault가 생길 경우, memory (page frame)에 올라와 있는 모든 page string을 index로 참조하면서 지금 참조되고 있는 refstring의 인덱스부터 해당 memory에 load 된 page string이 미래에 다시 참조될 때까지 인덱스를 증가시킨다. 만일 동일한 page string을 찾았다면 찾은 index와 지금 참조되고 있는 refstring의 index의 차를 page_info 배열의 해당 page string의 인덱스 위치로 forward distance를 저장한다. 만일 동일한 page string을 refstring에서 찾지 못했다는 것은, 가장 우선순위로 교체해야 할 page라는 것(후에 쓰이지 않을 page)을 의미하므로, 사실상 max의 distance인 1001로 저장한다. 그후 return_Big함수를 사용하여, memory(page frame)에 존재하는 page string들을 index로 이용하여 page_info 배열을 돌면서 가장 큰 page_info의 값을 가지고 있는 memory(page frame)의 index를 반환하여, 해당 index를 교체하게끔 한다. 이 때, tie-breaking rule을 큰 page number를 가진 frame 을 교체하는 방식으로 진행했다.
+
+2. LRU(FA)
+
+LRU의 과정은 MIN과 거의 동일하다. 차이점은 page_info 에 저장할 정보들이 다를 뿐이다. 저장할 정보는 backward distance 이므로, MIN에서는 참조된 ref_index 부터 refstring의 끝까지 이동하면서 미래에 참조될 page를 찾았다면, LRU는 ref_index 부터 refstring의 맨 앞까지 거꾸로 이동하면서 과거에 참조된 page를 찾는다. 따라서 LRU와 매우 흡사한 코드로 진행된다.
+
+3. LFU(FA)
+
+LFU의 과정은 앞서 본 두가지 알고리즘과 다른 부분이 있다. 일단, 초기과정은 비슷하지만, LFU는 맨 처음부터 계속해서 해당 page가 몇 번 참조되었는지를 기록해야 하므로, do_same함수를 약간 변형시켜야 한다. 먼저 page_info 배열을 모두 0으로 초기화 한다. 이는 각 page 별, 참조된 횟수를 초기화 하는 과정이므로 0을 초기화 하는 것이다. 그 후, 참조된 page string을 인덱스로 하는 page_info 배열의 값들을 ref_index를 증가시키면서 1씩 증가시킨다.
+그 후에, replacement할 page를 고르는 과정 속에서, 가장 작은 page info 값(가장 적게 참조된) 페이지를 교체해야 한다. 이를 return_Big_LFU 함수로 확인하였다. 하지만 여기서 유의해야 하는 점이, tie의 상황이다. 이를 return_Big_LFU 함수를 통해 알 수 있는데, 만일 min(최소 참 조 횟수)가 갱신된 상황속에서, 참조 횟수가 동일한 page가 존재하면 isTie 라는 tie가 존재함을 알려주는 변수를 1로 둔다. 동시에 인자로 받은 tie배열에 해당 page의 인덱스 위치의 값에 1로 설정하여, tie가 발생한 page 번호를 알 수 있게 한다. 물론, 새로운 min값이 갱신되면 tie값과 isTie는 초기값인 0으로 다 초기화 되어야 할 것이다. 마지막 page_info index까지 돌고 나서도 isTie가 1이라면, 같은 minimal count값을 가진 page가 존재하므로, return index를  -1로 반환한다. 그리고, LFU함수에서 반환한 값이 -1이라면 tie를 처리하는 과정을 거친다. 이 때 tie-breaking rule은 LRU이므로, tie 배열을 선형적으로 탐색하면서 1인 index (tie가 발생한 page)와 동일한 page를 ref index를 감소하면서 LRU알고리즘을 적용한다. backward distance를 다시 tie 배열에 해당 index(page string)에 저장한다. 그리고 이중 가장 값이 큰 tie index를 찾고, memory (page frame)에 해당 index가 존재하는 memory (page frame) 의 index를 찾는다. 이 index가 교체되어야 할 index이므로, 참조된 page string을 해당 memory index에 넣는다.
+
+4. WS(FA)
+
+WS memory management는 window size로 진행되는 management로 앞선 FA방식과 많이 다르다. 여기서 자료구조 Queue를 활용하였다. 그 이유는, working set이 Queue 자료구조와 닮은 구석이 있기 때문이다. 만약 0,1,2,3 의 residence set이 있는 와중에 (해당 순서대로 ref가 되었고 window size가 3이라고 가정하자), 4가 들어오면 가장 먼저 참조된 0이 replacement가 될 것이다. 하지만, 0,1,2,3,0,4가 순서대로 ref되었다고 가정하면, residence set은 (순서가 있다고 가정하자) 1,2,3,0이 되어 1이 replacement가 될 것이다. 즉 FIFO방식이 적용된다는 것이다. 따라서 Queue 자료구조을 마치 residence set처럼 생각했다. 
+하지만 한가지 더 고려해야할 점은, window size만큼의 시간 차이만큼에 해당하는 ref 된 page 들만 memory에 올라와 있어야 하므로, 해당 과정을 반드시 구현해야 한다. 이 상황은 오직 ref_index가 3보다 큰 상황에서만 고려해야하고, queue의 가장 front에 있는 page 정보는 가장 먼저 memory에 들어온 page이다. 따라서 해당 page string이 현재 ref_index보다 3만큼 작은 refstring의 index 까지 같은 page 가 참조되었다면 해당 page는 중복된 페이지이므로 반드시 window size안에 참조되었을 것이다. 하지만 그렇지 않다면 해당 page를 pop하면 된다. 이제 본격적인 working set management를 큐 관점에서 보자.
+만일 해당 큐가 비어 있다는 것은 page frame에 어떤 page도 load가 되지 않았다는 것이므로 (ref_index가 0), queue에 해당 ref page를 넣는다. 그후에 ref_index를 1부터 끝까지 증가시킨다. 
+이 때, 반드시 memory(page frame)에 이미 존재한 page를 ref 했다면, 아무것도 하지 않을 것이 아니라, 해당 page를 queue에서 삭제시키고 (page frame에서 빼내고), 다시 삽입하는 과정을 거쳐, ref된 순서를 반영해야만 한다. 해당 부분이 
+```c
+if (ptr->page == refstring[ref_index])
+```
+이 부분이다. 이를 구현하기 위해 queue를 ptr로 탐색할때, ptr 이전의Node 또한 preptr로 저장하였다. 이 외의 상황들은 일반적인 queue를 다룰 때와 크게 다르지 않다. 
+만일 fault가 발생한 상황이라면, 두가지 상황이 존재할 수 있는데, queue 존재하는 노드의 수가 window size + 1의 상황이라면 window size를 넘어가는 상황이므로, queue에서 노드를 pop하고 ref된 page를 push하는 과정을 거친다. 만일 그렇지 않다면 그냥 push만 하면 된다.
+ 
+### 3. 가정
+MIN 알고리즘의 tie-breaking rule을 큰 page number를 가진 frame 을 교체하는 방식으로 진행했다.
+
+### 4. 출력물 및 출력 형태
+
+- input 1
+
+억지로 MIN의 TIE상황을 만듦
+
+6 4 3 14 <br>
+0 1 5 0 3 4 4 2 4 3 4 5 3 4
+
+![image](https://user-images.githubusercontent.com/95288696/210159373-87092135-3f9e-4de7-9112-0e1eb813c89f.png)
+![image](https://user-images.githubusercontent.com/95288696/210159375-1efd31f6-3a91-46e9-bcc8-608b5da64192.png)
+
+MIN 에서 0153->0453 의 residence set이 변화하는 과정속에서 0과 1이 TIE인 상황에서 TIE breaking rule의 가정에 따라 큰 page string인 1이 교체 되었다.
+
+LRU 에서 0153->0453에서 오랜 시간동안 참조되지 않은 1이 교체되었다.
+
+LFU 에서 0153->0453에서 참조수가 1로 가장 적은 page 1이 교체되었다. 
+
+WS 에서 window size에 따라서 memory 에서 out (342->24)와 같은 현상이 일어난다. 
+
+- input 2
+
+억지로 TIE 상황을 만듦
+
+6 4 3 14 <br/>
+0 1 5 0 3 4 0 1 0 3 4 5 3 4
+
+![image](https://user-images.githubusercontent.com/95288696/210159398-dff01e2b-332f-44a5-a129-c2654d591401.png)
+![image](https://user-images.githubusercontent.com/95288696/210159399-17a05333-4d58-4fcb-b376-0ef9b04207f3.png)
+
+마찬가지로 MIN에서 0143->0543에서 0과 1이 TIE인 상황에서 TIE breaking rule에 따라 큰 page인 1이 교체되었다.
+
+LFU에서 0413->0453 에서 1이 두 번 3이 두 번 TIE인 상황에서 1이 3보다 더 오랜시간 참조되지 않았으므로 1이 replacement 되었다.
+
+- input 3
+
+WINDOW SIZE를 증가시켜 봄.
+
+6 4 4 15 <br/>
+0 1 2 3 4 5 4 5 4 1 3 4 3 4 5
+
+![image](https://user-images.githubusercontent.com/95288696/210159416-e109215c-69e4-4cda-988e-9b7199393478.png)
+![image](https://user-images.githubusercontent.com/95288696/210159417-0f39bb55-eb62-44ab-ae02-03179f655b11.png)
+
+WS에서 앞서 다르게 window size가 1만큼 늘어나다 보니, 5개까지 page가 residence set에 올라온 것을 볼 수 있다.
+
+- input 4
+
+5 5 3 13
+4 3 0 2 2 3 1 2 4 2 4 0 3
+
+![image](https://user-images.githubusercontent.com/95288696/210159426-23296bd3-9978-411f-8f2f-a127b241d08c.png)
+![image](https://user-images.githubusercontent.com/95288696/210159428-6f3ec6c9-2f84-4acc-afb8-be0fc6aa45d3.png)
+
+- input 5
+
+6 2 3 15 <br/>
+0 1 2 3 2 3 4 5 4 1 3 4 3 4 5
+
+![image](https://user-images.githubusercontent.com/95288696/210159466-d28e52ba-5234-481b-98a2-ad8217aedaf2.png)
+![image](https://user-images.githubusercontent.com/95288696/210159468-1cba78b3-6c00-49e2-8ad0-a1c39451d38e.png)
 
